@@ -1,0 +1,16 @@
+# SQLite WAL/SHM files
+*.db-shm
+*.db-wal
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.egg-info/
