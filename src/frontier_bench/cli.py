@@ -161,6 +161,43 @@ def cmd_check_updates(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_battery(args) -> int:
+    from frontier_bench.adapters.web.yaml_lite import load_blocks
+    from frontier_bench.domain.battery_presets import load_presets, plan
+    with open(args.file) as f:
+        presets = load_presets(load_blocks(f.read()))
+    if not args.preset:
+        print(f"Baterías declaradas en {args.file}:")
+        for pr in presets:
+            print(f"  - {pr.id}: {pr.description}  "
+                  f"[{len(pr.models)} modelos x np{list(pr.np)} x "
+                  f"{len(pr.variants)} variantes x {len(pr.profiles)} perfiles, "
+                  f"{len(pr.hypotheses)} hipótesis]")
+        return 0
+    match = [pr for pr in presets if pr.id == args.preset]
+    if not match:
+        print(f"Preset '{args.preset}' no existe en {args.file}")
+        return 1
+    preset = match[0]
+    cells = plan(preset)
+    print(f"Batería '{preset.id}' — {preset.description}")
+    if preset.spec:
+        print(f"Spec: {preset.spec}")
+    print(f"Hipótesis ({len(preset.hypotheses)}):")
+    for h in preset.hypotheses:
+        bound = (f"between {h.low}-{h.high}" if h.op == "between"
+                 else f"{h.op} {h.value}")
+        print(f"  - {h.id}: {h.statement}  [{h.metric} {bound}; scope {h.scope}]")
+    print(f"Plan EN SECO: {len(cells)} celdas (modelo x np x variante x perfil)")
+    if args.plan:
+        for c in cells:
+            mark = f"  <- {','.join(c.hypothesis_ids)}" if c.hypothesis_ids else ""
+            print(f"  {c.model} np={c.np} {c.variant} perfil-{c.profile}{mark}")
+    print("\nEjecución real: vía executor F3 (cola bench_run_request), gated por "
+          "RAM y validez ambiental. Este comando NO ejecuta modelos.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="frontier_bench")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -212,6 +249,15 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--needles", action="store_true", default=False)
     m.add_argument("--force-env", action="store_true", default=False)
     m.set_defaults(fn=cmd_measure)
+
+    bt = sub.add_parser("battery", help="baterías profesionales declarativas (SPEC 06)")
+    bt.add_argument("preset", nargs="?", default=None,
+                    help="id del preset; sin argumento, lista las baterías")
+    bt.add_argument("--file", default="batteries.yaml")
+    bt.add_argument("--plan", action="store_true",
+                    help="muestra el plan EN SECO (no ejecuta nada)")
+    bt.set_defaults(fn=cmd_battery)
+
     args = p.parse_args(argv)
     return args.fn(args)
 

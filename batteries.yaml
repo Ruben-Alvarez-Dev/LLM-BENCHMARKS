@@ -1,0 +1,80 @@
+# Baterías profesionales declarativas — FRONTIER BENCH v2 (SPEC 06)
+# Una batería = modelos x servidor x variantes x perfiles de carga x hipótesis FALSABLES.
+# Formato yaml_lite: bloques planos; las hipótesis son bloques propios (kind: hypothesis)
+# ligados por battery: <id>. Arrays SIEMPRE en una línea (yaml_lite no soporta multilínea).
+# El plan se genera EN SECO (battery <id> --plan); la ejecución real va por el executor F3.
+# Hipótesis sin medición = FALLO EXPLÍCITO (misma semántica que verdict_rules).
+
+- id: multislot_certification
+  kind: battery
+  spec: "specs/05-SPEC-MULTISLOT-BATTERY.md"
+  description: "Certificación de serving concurrente en el mini M1 16GB"
+  models: [Granite-4.1-8B, Qwen3.5-9B, Falcon-H1R-7B, Qwen3.5-4B]
+  server: {ctx: 32768, cache_type_k: q8_0, cache_type_v: q8_0, flash_attn: "on", kv_unified: true}
+  np: [1, 4, 8]
+  variants: [baseline, ngram-mod]
+  profiles: [A, B, C, D, E]
+
+- id: H1
+  kind: hypothesis
+  battery: multislot_certification
+  statement: "Granite-4.1-8B aguanta 8 slots 1h sin crash ni degradación >20%"
+  metric: soak_degradation_pct
+  op: lte
+  value: 20
+  scope: {profile: D, model: Granite-4.1-8B, np: 8}
+
+- id: H3
+  kind: hypothesis
+  battery: multislot_certification
+  statement: "El agregado con 8 streams es 2-3x el single-stream"
+  metric: aggregate_vs_single_x
+  op: between
+  low: 2.0
+  high: 3.0
+  scope: {profile: A, np: 8}
+
+- id: H5
+  kind: hypothesis
+  battery: multislot_certification
+  statement: "ngram-mod mejora >=15% el throughput en cargas de agente"
+  metric: ngram_mod_gain_pct
+  op: gte
+  value: 15
+  scope: {profile: A, variant: ngram-mod}
+
+- id: H6
+  kind: hypothesis
+  battery: multislot_certification
+  statement: "per-stream bajo 8 slots >= 8 t/s (umbral de usabilidad)"
+  metric: per_stream_tps_p50
+  op: gte
+  value: 8.0
+  scope: {profile: A, np: 8}
+
+- id: smoke
+  kind: battery
+  description: "Batería mínima de humo: valida el instrumento entero en <10 min"
+  models: [Qwen3.5-4B]
+  server: {ctx: 16384, cache_type_k: q8_0, cache_type_v: q8_0, flash_attn: "on"}
+  np: [1, 4]
+  variants: [baseline]
+  profiles: [A]
+
+- id: S1
+  kind: hypothesis
+  battery: smoke
+  statement: "per-stream con 4 slots >= 8 t/s"
+  metric: per_stream_tps_p50
+  op: gte
+  value: 8.0
+  scope: {profile: A, np: 4}
+
+- id: S2
+  kind: hypothesis
+  battery: smoke
+  statement: "cero errores HTTP/stream en la carga A"
+  metric: error_rate
+  op: lte
+  value: 0.0
+  scope: {profile: A}
