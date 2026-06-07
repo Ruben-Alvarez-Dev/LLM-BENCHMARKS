@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FRONTIER BENCH</title>
+<style>
+:root{--bg:#0d1117;--bg2:#141a23;--card:#1a2230;--edge:#27313f;--tx:#dbe2ef;--mut:#7d8aa5;
+--ac:#4f9cf9;--ok:#38d39f;--warn:#f6ad55;--bad:#f56565;font-size:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif;padding:22px 28px}
+h1{font-size:21px;letter-spacing:-.5px}h1 span{color:var(--ac);font-weight:300}
+.sub{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px}
+h2{font-size:15px;margin:24px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--edge);border-radius:10px;padding:13px 15px}
+.kpis{display:flex;gap:22px;flex-wrap:wrap}
+.kpi .v{font-size:24px;font-weight:700;color:var(--ac)}.kpi .l{font-size:10px;color:var(--mut);text-transform:uppercase}
+.m-chip{font-weight:700}.m-meta{color:var(--mut);font-size:12px;margin:4px 0}
+.eng{font-family:ui-monospace,monospace;font-size:11px;color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--mut);padding:5px 8px;border-bottom:1px solid var(--edge);position:sticky;top:0;background:var(--card)}
+td{padding:5px 8px;border-bottom:1px solid #1f2735;white-space:nowrap}
+.tbl{max-height:340px;overflow:auto}
+.b{border-radius:9px;padding:1px 8px;font-size:10px;font-weight:600}
+.b.v1{background:#3a2d12;color:var(--warn)}.b.v2{background:#11301f;color:var(--ok)}
+.b.ok{color:var(--ok)}.b.failed{color:var(--bad)}.b.skip{color:var(--mut)}
+.b.inv{background:#3a1212;color:var(--bad)}
+.t-card h3{font-size:13px;font-family:ui-monospace,monospace;color:var(--ac);margin-bottom:6px}
+.t-card .p{font-size:12px;margin-bottom:4px}
+.t-card .nf{font-size:11.5px;color:var(--warn)}
+.t-card .sup{font-size:10px;color:var(--mut);margin-top:6px;font-family:ui-monospace,monospace}
+#events{font-family:ui-monospace,monospace;font-size:11px;max-height:200px;overflow-y:auto;line-height:1.7}
+#events .ts{color:var(--mut)}#events .act{color:var(--ac)}
+.empty{color:var(--mut);font-style:italic;font-size:12px;padding:18px;text-align:center}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+</style>
+</head>
+<body>
+<h1>FRONTIER<span>BENCH</span></h1>
+<div class="sub">búsqueda de frontera · specs v2 · <span class="dot"></span><span id="live">conectando…</span></div>
+
+<div class="kpis card" id="summary"></div>
+
+<h2>Máquinas registradas</h2>
+<div class="grid" id="machines"></div>
+
+<h2>Resultados (histórico append-only)</h2>
+<div class="card tbl"><table id="cells"><thead><tr>
+<th>modelo</th><th>máquina</th><th>ctx</th><th>depth</th><th>slots</th><th>perfil</th>
+<th>decode t/s</th><th>protocolo</th><th>estado</th><th>válido</th></tr></thead><tbody></tbody></table></div>
+
+<h2>Ranking en vivo</h2>
+<div class="card" id="ranking"><div class="empty">Se llenará en tiempo real durante las campañas (stream SSE conectado). Aún no hay runs v2 válidos — las aceptaciones están bloqueadas hasta que liberes RAM.</div></div>
+
+<h2>Encolar pruebas (wizard mínimo)</h2>
+<div class="card" id="wizard">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+    <label style="font-size:11px;color:var(--mut)">modelo<br><input id="w-model" placeholder="(todos)" style="background:var(--bg);border:1px solid var(--edge);color:var(--tx);border-radius:6px;padding:6px"></label>
+    <label style="font-size:11px;color:var(--mut)">máquina<br><input id="w-machine" placeholder="(todas)" style="background:var(--bg);border:1px solid var(--edge);color:var(--tx);border-radius:6px;padding:6px"></label>
+    <label style="font-size:11px;color:var(--mut)">repeticiones<br><input id="w-repeats" type="number" value="1" min="1" max="100" style="width:70px;background:var(--bg);border:1px solid var(--edge);color:var(--tx);border-radius:6px;padding:6px"></label>
+    <label style="font-size:11px;color:var(--mut)"><input id="w-force" type="checkbox"> force (repetir aunque ya probado)</label>
+    <label style="font-size:11px;color:var(--mut)"><input id="w-failed" type="checkbox"> solo fallidas</label>
+    <button id="w-go" style="background:var(--ac);color:#fff;border:0;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer">Encolar</button>
+  </div>
+  <div id="w-out" style="font-size:11px;color:var(--mut);margin-top:8px">El executor consumirá la cola cuando haya recursos (pre-flight ambiental + tu aprobación de updates).</div>
+  <div id="queue" style="margin-top:10px;font-family:ui-monospace,monospace;font-size:11px"></div>
+</div>
+
+<h2>Enciclopedia de técnicas</h2>
+<div class="grid" id="techniques"></div>
+
+<h2>Actividad (action log en vivo)</h2>
+<div class="card" id="events"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+fetch("/api/summary").then(r=>r.json()).then(s=>{
+  $("#summary").innerHTML=`
+   <div class="kpi"><div class="v">${s.machines}</div><div class="l">máquinas</div></div>
+   <div class="kpi"><div class="v">${Object.values(s.cells||{}).reduce((a,b)=>a+b,0)}</div><div class="l">celdas</div></div>
+   <div class="kpi"><div class="v">${s.runs_valid}</div><div class="l">runs válidos</div></div>
+   <div class="kpi"><div class="v" style="color:var(--bad)">${s.runs_invalid}</div><div class="l">runs inválidos</div></div>
+   <div class="kpi"><div class="v" style="color:var(--warn)">${(s.cells||{}).skipped_budget||0}</div><div class="l">skip presupuesto</div></div>`;
+});
+
+fetch("/api/machines").then(r=>r.json()).then(ms=>{
+  $("#machines").innerHTML=ms.map(m=>`<div class="card">
+    <div class="m-chip">${esc(m.machine_id)} <span style="color:var(--mut);font-weight:400">· ${esc(m.chip)}</span></div>
+    <div class="m-meta">${m.ram_gb} GB · ${esc(m.platform)} · ${m.bandwidth_gbs||"?"} GB/s · budget GPU ${m.wired_limit_gb||(m.ram_gb*2/3).toFixed(1)} GB</div>
+    <div class="eng">${Object.entries(m.facts.engines||{}).map(([k,v])=>`${k} ${esc((v.version||"").replace("version: ",""))}`).join(" · ")||"sin engines"}</div>
+  </div>`).join("")||'<div class="empty">ninguna — usa: frontier_bench probe</div>';
+});
+
+fetch("/api/cells").then(r=>r.json()).then(cs=>{
+  $("#cells tbody").innerHTML=cs.map(c=>`<tr>
+    <td>${esc(c.model_id)}</td><td>${esc(c.machine_id)}</td>
+    <td>${c.ctx>=1024?(c.ctx/1024)+"K":c.ctx}</td><td>${c.depth_pct}%</td><td>${c.slots}</td>
+    <td>${esc(c.profile)}</td><td>${c.decode_tps??"—"}</td>
+    <td><span class="b ${esc(c.protocol)}">${esc(c.protocol)}</span></td>
+    <td><span class="b ${c.status==="ok"?"ok":c.status==="failed"?"failed":"skip"}">${esc(c.status)}</span>
+        ${c.skip_reason?`<span style="color:var(--mut);font-size:10px"> ${esc(c.skip_reason.slice(0,40))}</span>`:""}</td>
+    <td>${c.valid===0?'<span class="b inv">NO</span>':c.valid===1?"sí":"—"}</td>
+  </tr>`).join("")||'<tr><td colspan="10" class="empty">sin celdas</td></tr>';
+});
+
+fetch("/api/techniques").then(r=>r.json()).then(ts=>{
+  $("#techniques").innerHTML=ts.map(t=>`<div class="card t-card">
+    <h3>${esc(t.id)}</h3>
+    ${t.purpose?`<div class="p">${esc(t.purpose)}</div>`:""}
+    ${t.not_for?`<div class="nf">⚠ no sirve para: ${esc(t.not_for)}</div>`:""}
+    <div class="sup">soporta: ${Object.keys(t.supports||{}).join(", ")||"—"}
+    ${(t.warnings||[]).length?` · avisos: ${t.warnings.join(", ")}`:""}</div>
+  </div>`).join("");
+});
+
+function loadQueue(){fetch("/api/run-queue").then(r=>r.json()).then(q=>{
+  $("#queue").innerHTML=q.map(x=>{
+    const p=JSON.parse(x.payload_json||"{}");
+    return `<div>${x.consumed?"✅":"⏳"} #${x.id} ${esc(x.ts)} · ${esc(JSON.stringify(p.filters))} ×${p.repeats}${p.force?" force":""} <span style="color:var(--mut)">${esc(p.note||"")}</span></div>`;
+  }).join("")||'<span style="color:var(--mut)">cola vacía</span>';
+});}
+loadQueue();
+$("#w-go").onclick=()=>{
+  fetch("/api/run-requests",{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({model:$("#w-model").value||null,machine:$("#w-machine").value||null,
+      repeats:+$("#w-repeats").value,force:$("#w-force").checked,
+      only_failed:$("#w-failed").checked,note:"wizard UI"})})
+  .then(r=>r.json()).then(d=>{$("#w-out").textContent="✓ encolado: "+JSON.stringify(d.request.filters)+" ×"+d.request.repeats;loadQueue();});
+};
+
+const ev=new EventSource("/api/events");
+ev.onopen=()=>{$("#live").textContent="stream en vivo (SSE)"};
+ev.onmessage=e=>{
+  const d=JSON.parse(e.data);
+  const div=document.createElement("div");
+  div.innerHTML=`<span class="ts">${esc(d.ts)}</span> <span class="act">${esc(d.actor)}·${esc(d.action)}</span> ${esc((d.payload_json||"").slice(0,110))}`;
+  $("#events").prepend(div);
+  while($("#events").children.length>40)$("#events").lastChild.remove();
+};
+ev.onerror=()=>{$("#live").textContent="stream desconectado"};
+</script>
+</body>
+</html>
