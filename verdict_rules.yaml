@@ -1,0 +1,18 @@
+# Reglas de veredicto v1 — versionadas; cada veredicto cita regla+versión+evidencia.
+# Umbrales del 02-SPEC §4. Cambiar un umbral = nueva versión (los veredictos viejos
+# no se borran: histórico append-only también aquí).
+
+- id: apto_concurrencia
+  version: v1
+  description: "Sirve para N agentes concurrentes a contexto C"
+  requires: {error_rate_pct: {max: 0.0}, per_stream_tps_p50: {min: 8.0}, ttft_ms_p95: {max: 3000.0}, reprefill_pct: {max: 25.0}}
+  optional: {json_valid_pct: {min: 95.0}}   # solo si el perfil E corrió
+
+- id: apto_contexto
+  version: v1
+  description: "El contexto C es real: rinde y recuerda a profundidad"
+  requires: {decode_retention_pct: {min: 60.0}, beacon_recall_pct: {min: 67.0}, degenerate_rate_pct: {max: 5.0}}
+
+- id: frontera
+  version: v1
+  description: "Máximo N slots y máximo ctx que cumplen, por modelo y máquina"

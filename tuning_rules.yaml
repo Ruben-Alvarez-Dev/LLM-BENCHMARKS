@@ -1,0 +1,54 @@
+# TuningAdvisor — reglas declarativas: perfil del host → parámetros óptimos sugeridos.
+# Cada regla cita su evidencia. El advisor PROPONE; el usuario puede sobreescribir
+# (la celda registra sugerido-vs-usado). Se amplía por plataforma sin tocar el dominio.
+
+- when: {platform: metal}
+  suggest:
+    ngl: 99
+    flash_attn: "on"
+    cache_type_k: q8_0
+    cache_type_v: q8_0       # simétrico obligatorio en Metal
+    kv_unified: true
+    spec_type: ngram-mod
+  evidence:
+    - "https://github.com/ggml-org/llama.cpp/issues/21450"   # KV mixto crashea
+    - "https://github.com/ggml-org/llama.cpp/issues/23752"   # MTP pérdida neta Metal
+    - "INFERENCE-investigation/docs/research/2026-06-06-VERIFICACION-ADVERSARIAL-SOTA.md"
+
+- when: {platform: metal, ram_gb: {lte: 16}}
+  suggest:
+    wired_limit_mb_hint: 12288   # sysctl iogpu.wired_limit_mb (requiere sudo; solo hint)
+    os_reserve_gb: 3.5
+  evidence: ["https://github.com/ivanopcode/devnote-override-macos-metal-vram-cap"]
+
+- when: {cpu_vendor: intel, has_isa: [avx512]}
+  suggest:
+    build_flags: ["-DGGML_AVX512=ON"]
+    threads: physical_p_cores
+    numa: distribute
+  evidence: ["https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md"]
+
+- when: {cpu_vendor: amd, has_isa: [avx512]}   # Zen 4/5 (Ryzen 7/9 modernos, EPYC)
+  suggest:
+    build_flags: ["-DGGML_AVX512=ON", "-DGGML_AVX512_BF16=ON"]
+    threads: physical_cores
+  evidence: ["https://github.com/ggml-org/llama.cpp/discussions"]
+
+- when: {platform: cuda}
+  suggest:
+    ngl: by_vram            # capas según VRAM detectada
+    paged_attention: eligible
+    spec_type: draft-eagle3  # elegible solo aquí (PR/forks CUDA)
+    cache_type_k: tbq4_0     # TurboQuant elegible en CUDA (fork)
+  evidence:
+    - "https://github.com/ggml-org/llama.cpp/pull/18039"
+    - "https://github.com/ggml-org/llama.cpp/discussions/21155"
+
+- when: {platform: cpu}     # VPS sin GPU (Hetzner Xeon/Ryzen)
+  suggest:
+    ngl: 0
+    threads: physical_cores_minus_one
+    ubatch: 256
+    mmap: true
+    note: "candidatos preferentes: MoE A-pequeño y ternarios (Q1_0/TQ) — bandwidth-bound"
+  evidence: ["specs/v2/02-SPEC.md#presupuesto"]

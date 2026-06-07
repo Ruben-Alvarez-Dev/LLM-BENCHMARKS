@@ -1,0 +1,81 @@
+# Registro declarativo de técnicas — FRONTIER BENCH v2
+# Una técnica EXISTE aunque ninguna plataforma local la soporte: al añadir una máquina
+# CUDA/Linux, el planner llenará esas columnas sin tocar el dominio.
+# supports: engine_id -> "native" | [plataformas] | {plataforma: estado}
+# Evidencia: INFERENCE-investigation/docs/research/2026-06-06-VERIFICACION-ADVERSARIAL-SOTA.md
+
+- id: kv_q8
+  dims: {cache_type_k: q8_0, cache_type_v: q8_0}
+  supports: {llamacpp: native, rotorquant: native, vllm_cuda: native}
+  constraints: [metal_kv_types_must_match]   # issue ggml-org/llama.cpp#21450
+  purpose: "Duplica el contexto que cabe en RAM con pérdida ~0 de calidad"
+  not_for: "No acelera el decode por sí mismo; no probar como técnica de velocidad"
+  optimal_when: "Siempre en Metal (default recomendado); imprescindible con multi-slot"
+  evidence: ["https://www.techplained.com/kv-cache-quantization"]
+
+- id: kv_q4
+  dims: {cache_type_k: q4_0, cache_type_v: q4_0}
+  supports: {llamacpp: native, rotorquant: native}
+  warnings: [v_cache_q4_ppl_loss_1.4pct]
+
+- id: kv_planar3
+  dims: {cache_type_k: planar3, cache_type_v: f16}
+  supports: {rotorquant: native}             # nuestro fork; Metal OK, por delante del mainline
+
+- id: kv_turboquant_tbq4
+  dims: {cache_type_k: tbq4_0, cache_type_v: tbq4_0}
+  supports: {llamacpp: {cuda: fork-AmesianX}}  # ICLR'26; sin Metal aún (disc. #21243 WIP)
+
+- id: kv_mlx_8bit
+  dims: {kv_bits: 8}
+  supports: {mlx: native, omlx: native}
+
+- id: flash_attn
+  dims: {flash_attn: "on"}
+  supports: {llamacpp: native, rotorquant: native, vllm_cuda: native}
+
+- id: spec_ngram_mod
+  dims: {spec_type: ngram-mod}
+  supports: {llamacpp: native, rotorquant: native}
+  # pool ~16MB compartido entre slots; la única especulación con EV+ en Metal hoy
+
+- id: spec_mtp
+  dims: {spec_type: draft-mtp}
+  supports: {llamacpp: native, rotorquant: native}
+  warnings: [metal_net_loss_issue_23752]     # se PUEDE probar; el warning viaja al reporte
+  purpose: "Especulación con cabezas MTP nativas del modelo (1.5-2x en CUDA)"
+  not_for: "En Metal es pérdida neta medida (−11% a −14x); probarla aquí sirve para CONFIRMAR la regresión, no para acelerar"
+  optimal_when: "CUDA con modelos que traen MTP (Qwen3.5/3.6, DeepSeek V3+, GLM MoE)"
+  evidence: ["https://github.com/ggml-org/llama.cpp/issues/23752"]
+
+- id: spec_eagle3
+  dims: {spec_type: draft-eagle3}
+  supports: {vllm_cuda: native, llamacpp: {cuda: pr-18039-open}}
+
+- id: spec_draft_model
+  dims: {spec_type: draft-simple}
+  supports: {llamacpp: native, mlx: native, vllm_cuda: native}
+  warnings: [ram_cost_draft_kv_per_slot]
+
+- id: paged_attention
+  dims: {paged: true}
+  supports: {vllm_cuda: native, vllm_metal: {metal: v0.2-experimental}}
+
+- id: prefix_cache_reuse
+  dims: {cache_reuse: 256, cache_ram_mb: 2048}
+  supports: {llamacpp: native, rotorquant: native, omlx: native}
+
+- id: kv_unified
+  dims: {kv_unified: true}
+  supports: {llamacpp: native, rotorquant: native}
+  warnings: [idle_slots_degrade_tg_issue_19523]
+
+- id: rope_yarn
+  dims: {rope_scaling: yarn}
+  supports: {llamacpp: native, rotorquant: native, mlx: native, vllm_cuda: native}
+  # obligatoria para ctx > context_native (700K/1M); el resultado queda marcado extrapolated
+
+- id: moe_cpu_offload
+  dims: {n_cpu_moe: auto}
+  supports: {llamacpp: native, vllm_cuda: native}
+  warnings: [pointless_on_unified_memory_if_model_fits]
