@@ -321,3 +321,18 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 - UI: wizard minimo de encolado + panel de cola (mismo canal que MCP bench_run_request)
 - Catalogo llm_catalogo.csv importado al registry (con flag on_disk)
 - Tests: 83/83 OK
+
+## Sesion 2026-06-07 — Literatura de tecnicas integrada (investigacion MCP-agent-research)
+
+- docs/research/2026-06-07-INFERENCE-TECHNIQUES-LANDSCAPE.md: panorama con evidencia
+  (MTP Metal = perdida neta #23752; MTPLX 2.24x MLX-nativo; EAGLE-3 PR abierto;
+  DFlash dependiente de engine; TurboQuant turbo3/4 4.6-5.2x en forks; YaRN s>8 y
+  ppl-no-basta -> valida beacon recall; RTPurbo sparse 9.36x prefill en vigilancia)
+- techniques.yaml: enriquecidos kv_turboquant_tbq4 (Metal via turboquant_plus,
+  reported), spec_eagle3 (enciclopedia + prototipo mlx-lm #890) y rope_yarn
+  (enciclopedia); NUEVAS spec_dflash, spec_mtp_mlx (motor candidato MTPLX) y
+  sparse_attention_rtpurbo (research-stage, supports vacio)
+- Auditoria de MCP-agent-research durante la investigacion: search/extract excelente;
+  perplexica/gpt_research 403 con health check ciego; dedup bug en search_auto.
+  Plan de reestructuracion en su repo (docs/2026-06-07-RESTRUCTURE-PLAN.md)
+- Tests: 83/83 OK tras los cambios de YAML (yaml_lite parsea el fichero real)

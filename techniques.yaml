@@ -24,7 +24,15 @@
 
 - id: kv_turboquant_tbq4
   dims: {cache_type_k: tbq4_0, cache_type_v: tbq4_0}
-  supports: {llamacpp: {cuda: fork-AmesianX}}  # ICLR'26; sin Metal aún (disc. #21243 WIP)
+  supports: {llamacpp: {cuda: fork-AmesianX, metal: fork-turboquant_plus-reported}}
+  # ICLR'26; Metal: turboquant_plus reporta integración con prefill ≈ q8_0 y ~4.6x
+  # compresión (sin verificar por nosotros); mainline PR #21307 cerrado, disc. #20969 activa
+  purpose: "4.6-5.2x de compresión KV casi lossless — el desbloqueo del ctx 256K-1M en 16GB"
+  not_for: "Mainline; requiere build de fork. K tolera 3-bit mejor que V (mezclar turbo3/turbo4)"
+  optimal_when: "Escalera de contexto larga en el Mini 16GB donde el KV es la pared"
+  evidence: ["https://github.com/ggml-org/llama.cpp/discussions/20969",
+             "https://github.com/ggml-org/llama.cpp/discussions/21243",
+             "https://kevinkeller.org/posts/turboquant-kv-cache-local-llm-consumer-hardware/"]
 
 - id: kv_mlx_8bit
   dims: {kv_bits: 8}
@@ -50,7 +58,30 @@
 
 - id: spec_eagle3
   dims: {spec_type: draft-eagle3}
-  supports: {vllm_cuda: native, llamacpp: {cuda: pr-18039-open}}
+  supports: {vllm_cuda: native, llamacpp: {cuda: pr-18039-open}, mlx: prototype-disc-890}
+  purpose: "Draft head entrenado sobre representaciones del target; SOTA de aceptación en vLLM"
+  not_for: "llama.cpp mainline (PR #18039 sigue en draft, 2026-06-07); sin path Metal serio"
+  optimal_when: "vLLM/SGLang con heads publicados (RedHatAI gemma-4-31B-it: aceptación 2.07-3.93 tokens a k=3-5)"
+  evidence: ["https://github.com/ggml-org/llama.cpp/pull/18039",
+             "https://github.com/ml-explore/mlx-lm/discussions/890",
+             "https://huggingface.co/RedHatAI/gemma-4-31B-it-speculator.eagle3"]
+
+- id: spec_dflash
+  dims: {spec_type: draft-dflash}
+  supports: {vllm_cuda: native, sglang_cuda: native, llamacpp: {cuda: pr-22105-net-loss}}
+  purpose: "Drafter de difusión por bloques (z-lab heads Qwen3.5 4B/9B/27B/35B-A3B): 2-5x en datacenter a baja concurrencia"
+  not_for: "llama.cpp en GPU consumer: −44.6% medido (RTX 3090 Q4). Sin datapoint Apple Silicon aún"
+  optimal_when: "SGLang/vLLM en B200-class; ganancia cae al subir la concurrencia"
+  evidence: ["https://kaitchup.substack.com/p/dflash-for-qwen35-eagle-for-gemma",
+             "https://github.com/thc1006/qwen3.6-speculative-decoding-rtx3090"]
+
+- id: spec_mtp_mlx
+  dims: {spec_type: mtp-native-mlx}
+  supports: {mtplx: native}                  # motor candidato NUEVO (no integrado aún)
+  purpose: "MTP nativo en MLX con rejection sampling exacto (distribución preservada a T>0): 2.24x medido en Qwen3.6-27B @ temp 0.6"
+  not_for: "llama.cpp/GGUF; requiere pesos MLX y el runtime MTPLX (Apache-2.0, server OpenAI/Anthropic-compatible)"
+  optimal_when: "Apple Silicon puro donde llama.cpp MTP es pérdida neta — la única especulación con ganancia 2x+ medida en Metal"
+  evidence: ["https://github.com/youssofal/MTPLX"]
 
 - id: spec_draft_model
   dims: {spec_type: draft-simple}
@@ -74,6 +105,19 @@
   dims: {rope_scaling: yarn}
   supports: {llamacpp: native, rotorquant: native, mlx: native, vllm_cuda: native}
   # obligatoria para ctx > context_native (700K/1M); el resultado queda marcado extrapolated
+  purpose: "Extensión de contexto sin retrain; mejor ppl que NTK-aware a partir de 4x"
+  not_for: "Factores s>8: degradación documentada en el paper. La ppl NO basta como métrica (Code Llama 13B: ppl creciente >100K con passkey 99.4% @128K) — usar beacon recall"
+  optimal_when: "Peldaños > ctx nativo, siempre con --yarn-orig-ctx correcto; vigilar LongRoPE2 como sucesor near-lossless"
+  evidence: ["https://arxiv.org/abs/2309.00071",
+             "https://arxiv.org/abs/2502.20082"]
+
+- id: sparse_attention_rtpurbo
+  dims: {attention: sparse-rtpurbo}
+  supports: {}                                # research-stage (preprint may-2026); sin runtime local
+  purpose: "Conversión full->sparse attention en cientos de pasos: 9.36x prefill a 1M ctx (Alibaba/Nanjing)"
+  not_for: "Uso local hoy; no hay artefactos GGUF/MLX publicados"
+  optimal_when: "Vigilancia: si publican checkpoints sparse de Qwen3.x, replantea la escalera 512K-1M"
+  evidence: ["https://theplanettools.ai/blog/alibaba-nanjing-rtpurbo-qwen3-sparse-attention-9x-prefill-1m-context-may-2026"]
 
 - id: moe_cpu_offload
   dims: {n_cpu_moe: auto}
