@@ -171,3 +171,153 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 ---
 
 *Documentacion generada el 2026-05-29 por el Benchmark Orchestrator.*
+
+---
+
+## Sesion 2026-06-06 — Fase 0 FRONTIER BENCH (specs v2)
+
+- Esqueleto hexagonal en `src/frontier_bench/` (domain puro + ports + adapters/storage)
+- KvModel por arquitectura (denso GQA / hibrido GDN / SWA dual-cache / MLA / recurrente)
+  con presupuesto por maquina y pesos por tamano REAL de fichero
+- Planner: expansion cartesiana con poda VISIBLE (skipped_budget con desglose,
+  skipped_unsupported con motivo) — nada se descarta en silencio
+- `techniques.yaml`: 15 tecnicas declaradas incl. CUDA-only (eagle3, turboquant, paged)
+- Storage SQLite WAL v2 + action_log; migracion v1: 10 modelos, 19 celdas, 36 medidas
+  importadas a `data/frontier_bench_v2.db` con `protocol=v1`
+- Tests: 15/15 OK (unittest puro, dominio sin I/O). Staging espejo en
+  ~/Claude/Projects/CLI-CLI/frontier-bench-staging (desarrollo con sandbox)
+- Siguiente: Fase 1 — protocolo de medicion (corpus real, decode-at-depth, n>=3)
+
+## Sesion 2026-06-06b — F0.5: enciclopedia, seleccion granular, realtime
+
+- specs/v2/05-ADDENDUM: RunRequest (repetir N, celda concreta, force, append-only),
+  enciclopedia (purpose/not_for/evidence en cada tecnica), HostProfiler+TuningAdvisor
+  (auto-adaptacion al host: Metal/Xeon-AVX512/Ryzen/CUDA/CPU-VPS), stream de eventos
+  canal-agnostico + ranking vivo
+- domain/scheduler.py (filtros por cualquier dimension, repeats, force, only_failed),
+  domain/events.py (EventBus tipado), domain/ranking.py (leaderboards incrementales
+  por mediana, publica RANKING_UPDATED)
+- tuning_rules.yaml (reglas declarativas con evidencia) + techniques.yaml con metadatos
+  de enciclopedia
+- Tests: 23/23 OK en sandbox y en MBP
+
+## Sesion 2026-06-06c — F1 completa en codigo; aceptacion bloqueada (RAM en uso)
+
+- INCIDENTE: llama-cli b8880 sin timings parseables en single-turn → primera aceptacion
+  cancelada a mitad. Decision documentada en docs/decisions/ADR-001.
+- Velocidad migrada a llama-bench (-d profundidad nativa, -r reps, -o json):
+  adapters/engines/llamabench.py con parser tolerante
+- NUEVO REQUISITO (Ruben): validez ambiental — pre/post-flight de RAM libre, swap,
+  procesos pesados ajenos y load; runs marcados valid=0 con motivos si algo interfiere;
+  excluidos de rankings/veredictos; CLI aborta sin --force-env.
+  domain/environment.py + adapters/probes/macos_env.py + columnas valid/interference
+- CLI measure integra: pre-flight → llama-bench (velocidad) → llama-cli (needles) →
+  post-flight → BD. 41/41 tests OK (sandbox y MBP)
+- Aceptacion F1 pendiente de que el usuario libere RAM (comando listo en ADR-001)
+
+## Sesion 2026-06-06d — F2: runners + HostProfiler (sin ejecutar modelos)
+
+- LocalRunner + SshRunner (BatchMode, quoting seguro, scp) implementando RunnerPort
+- HostProfiler: UN script con marcadores via cualquier runner (1 ida y vuelta);
+  parsea Darwin y Linux (VPS-ready: Xeon/Ryzen/nvidia-smi); fix PATH ssh no-interactivo
+- CLI `probe`: perfila y registra maquina en BD (facts_json con engines+versiones)
+- ACEPTACION (nivel probe): ambas maquinas registradas con el mismo comando —
+  MBP M1 Max 32GB (llama.cpp b9430) y mini M1 16GB via Tailscale alias local-server
+  (llama.cpp b9290). HALLAZGO: versiones DISTINTAS entre maquinas — exactamente el
+  skew que el provenance por fila existe para cazar. Homebrew actualizo el MBP de
+  b8880 a b9430 durante la propia sesion.
+- Pendiente F2: aceptacion a nivel celda (bloqueada junto a F1 por RAM en uso)
+- TODO menor: regex de version no matchea la salida de llama-bench --version
+- Tests: 47/47 OK
+
+## Sesion 2026-06-06e — politicas de mantenimiento + primera UI
+
+- domain/maintenance.py: UpdateProposal (brew outdated, filtrado llama.cpp/ggml) +
+  CleanupManifest (temp vs evidencia; evidencia comprimida .gz; verificacion post-borrado)
+- CLI: `check-updates` (solo propone) y `ui` (dashboard web stdlib puro, puerto 4400)
+- adapters/web: server http.server + SSE del action_log + SPA (maquinas, resultados
+  con badges v1/v2 y valido, enciclopedia con purpose/not_for, ranking placeholder,
+  actividad en vivo) — cero dependencias
+- yaml_lite: parser del subconjunto YAML del registro (testeado contra el fichero real)
+- Tests: 53/53 OK
+
+## Sesion 2026-06-06f — FRONTIER BENCH como complemento de MCP Lens
+
+- adapters/mcp/server.py: servidor MCP stdio SIN dependencias (JSON-RPC minimo:
+  initialize, tools/list, tools/call, ping) — tercera cara del hexagono
+- 7 tools: bench_summary, bench_machines, bench_results (filtros), bench_rankings
+  (solo runs validos), bench_techniques (enciclopedia), bench_action_log,
+  bench_run_request (encola; el executor F3 lo consumira)
+- Registrado en MCP Lens (mcp-servers.json) + perfil profiles/frontier-bench.js:
+  KPIs, maquinas, ranking, coleccion de resultados con facetas, enciclopedia
+- e2e verificado: protocolo en sandbox + dashboard renderizado en Lens (5 paneles)
+- La UI propia (puerto 4400) sigue disponible para monitor en vivo y wizard
+
+## Sesion 2026-06-06g — F3 en seco: concurrencia calibrada sin modelos
+
+- domain/loadmetrics.py: RequestResult + compute (agregado, per-stream p50, TTFT p50/p95,
+  error_rate, reprefill_pct) — funciones puras
+- adapters/loadgen: cliente OpenAI SSE stdlib (mide TTFT real, captura timings de
+  llama-server) + perfiles A (Poisson), B (prefijo compartido multi-turno), C (asimetrico),
+  D (soak), E (tool-call JSON) + json_tool_validity
+- adapters/engines/llamaserver.py: ServingEnginePort (build_cmd segun tecnicas, /health, stop)
+- domain/battery.py: bateria completa de UN modelo — preflight ambiental → serve →
+  perfil → postflight → Run valido/invalido → LIMPIEZA IMPOLUTA incondicional (try/finally)
+- IMPORTANTE (pregunta de Ruben): el FakeOpenAIServer de los tests calibra el INSTRUMENTO
+  (verificamos que reprefill_pct caza un #24055 simulado, que error_rate cuenta, que los
+  percentiles son correctos). La verificacion REAL de consistencia y contexto la hacen
+  needles/degeneracion/JSON-vs-single-stream/timings reales — solo contra servers reales
+  (pendiente de RAM libre). El fake garantiza que esos numeros signifiquen algo.
+- Tests: 61/61 OK
+
+## Sesion 2026-06-06h — Auditoria "nada por sentado" (peticion de Ruben)
+
+- Escalera de contextos COMPLETA: se anade 512K → 4/8/16/32/64/128/256/512K/700K/1M
+- Censo exhaustivo de parametros (docs/research/2026-06-06-PARAM-CENSUS.md): cada flag
+  de llama-bench/llama-server cubierto, descartado con logica escrita, o marcado
+  exploratorio (-nkvo, -mmp, -dio, -b/-ub: 1 celda por modelo — comprobar, no suponer)
+- HALLAZGO CRITICO del censo: llama-bench NO tiene flags rope/YaRN → velocidad a
+  profundidad > ctx nativo debe medirse via llama-server (el planner enrutara)
+- HALLAZGO: llama-bench acepta listas/rangos nativos (-d 4096-1048576*2): escalera
+  entera en una invocacion; --delay para asentamiento; warmup SE RESPETA
+- gguf_reader.py: metadatos leidos DEL FICHERO (arch, capas, kv_heads incl. per-layer
+  en hibridos, ctx nativo, rope/YaRN). Verificado con QwenPaw-Flash-9B real: qwen35,
+  32L, kv4, hd256, 262144 nativo, rope none → YaRN-extensible. Matiz: este GGUF no
+  publica kv_heads por capa → la parte hibrida sale de tabla de archs conocidas (anotado)
+- verifiable.py: contexto 100% verificable — balizas sha256 cada 1024 tokens, cualquier
+  posicion comprobable, preguntas multi-baliza, BISECCION del contexto efectivo (<=12 sondas)
+- YaRN enforcement en llamaserver.build_cmd: ctx>nativo anade --rope-scaling yarn
+  --yarn-orig-ctx automaticamente; jamas extrapolacion silenciosa
+- Aislamiento: wait_recovery entre celdas (baseline RAM +-1.5GB, timeout → warning leak);
+  tercera actualizacion silenciosa de Homebrew detectada HOY (ggml 0.10→0.13.1)
+- Tests: 71/71 OK
+
+## Sesion 2026-06-06i — MasterContext: prefijos anidados + anti-memorizacion (idea de Ruben)
+
+- MasterContext: extracto maestro UNICO (hasta 1M) del que toda la escalera toma
+  PREFIJOS EXACTOS (700K, 512K, 256K... son prefijos literales — testeado bit a bit).
+  Diferencias entre peldanos atribuibles SOLO a la longitud, no al contenido.
+  Bonus: prefix-cache del server reutiliza el prefijo comun entre peldanos.
+- Anti-memorizacion en tres capas: (1) corpus privado de Ruben (fuera de cualquier
+  training set), (2) sal sha256 por parrafo (frag:<hex>) — texto globalmente irrepetible,
+  (3) las preguntas SOLO interrogan codigos de baliza sha256 — jamas el relleno:
+  ni un modelo que hubiera visto fragmentos podria responder sin atender al contexto.
+- Fingerprint del maestro al provenance de cada run (mismo seed = bit a bit identico)
+- Tests: 73/73 OK
+
+## Sesion 2026-06-06j — F4 + executor + wizard + routing + catalogo (todo en seco)
+
+- domain/verdicts.py: VerdictEngine con reglas versionadas (verdict_rules.yaml):
+  apto_concurrencia, apto_contexto (con decode_retention/beacon_recall derivadas) y
+  FRONTERA — la respuesta original: "este modelo sirve hasta N slots, este no".
+  Metrica requerida SIN MEDIR = fallo explicito (nada se aprueba por omision)
+- domain/tuning.py: TuningAdvisor aplica tuning_rules.yaml al perfil del host;
+  toda sugerencia cita su evidencia; yaml_lite ampliado con anidacion 1 nivel
+- domain/executor.py: consume la cola de RunRequests (UI/MCP) de forma idempotente;
+  modo dry (actual) planifica y registra; modo real inyecta battery_fn (gated)
+- Planner: routing del censo — ctx>nativo sin rope_yarn => SKIPPED con motivo
+  (llama-bench no extiende rope; esas celdas van a llama-server)
+- llamabench: multi-depth nativo (-d lista) + --delay entre tests
+- UI: wizard minimo de encolado + panel de cola (mismo canal que MCP bench_run_request)
+- Catalogo llm_catalogo.csv importado al registry (con flag on_disk)
+- Tests: 83/83 OK
