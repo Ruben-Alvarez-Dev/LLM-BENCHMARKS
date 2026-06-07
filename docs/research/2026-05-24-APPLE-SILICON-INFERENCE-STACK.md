@@ -1,11 +1,15 @@
 # Apple Silicon Inference Stack — Pipeline Custom para Mac Mini M1 16GB
 
-> **Fecha:** 2026-05-24 (v2 — actualizado con VPS stack, MCP ecosystem y nuevos benchmarks)
-> **Hardware objetivo:** Mac Mini M1 — 16 GB RAM unificada
+> **Fecha:** 2026-05-24 (v3, junio 2026 — ver addenda abajo)
+> **Hardware:** Mac Mini M1 16GB + MacBook Pro M1 Max 32GB
 > **Propósito:** Catálogo razonado de tecnologías, modelos, motores y estrategias para
 > inferencia local de LLMs en Apple Silicon con recursos limitados.
-> **Estado:** Investigación activa — resultados de búsqueda web (Brave, Kagi, Tavily, Serper,
-> Jina, Exa) + análisis de repositorios locales y GitHub (Ruben-Alvarez-Dev)
+> **Estado:** Activo. Actualizado con motor ROTORQUANT turbo3 compilado a medida.
+>
+> **ADDENDA JUNIO 2026 — Documentos complementarios (misma carpeta):**
+> - `2026-06-06-VERIFICACION-ADVERSARIAL-SOTA.md` — Auditoría adversarial de afirmaciones SOTA
+> - `2026-06-06-LLAMA-CPP-PARAMETER-REFERENCE.md` — Referencia exhaustiva de parámetros llama-server
+> - `2026-06-06-BUILD-llama-cpp-rotorquant-turbo3-metal-arm64-johndpope-ssm-qwen35.md` — Build del motor ROTORQUANT turbo3 para Apple Silicon
 
 ---
 
