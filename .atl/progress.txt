@@ -1,0 +1,1 @@
+2026-06-12 framework bootstrapped; loop1 ladder running (tg 22.2@4K, 8.4@32K pre-fa)

@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "project": "LLM-BENCHMARKS",
+  "updated": "2026-06-12",
+  "language_policy": { "with_ruben": "es", "everything_else": "en" },
+  "spec": {
+    "require_spec_before_code": true,
+    "require_plan_with_options_and_tradeoffs": true,
+    "consult_learnings_before_planning": true,
+    "no_improvisation": true
+  },
+  "validation": {
+    "require_explicit_approval": true,
+    "scope_locked_to_approved_plan": true,
+    "require_double_source_for_claims": true,
+    "search_before_asking": true,
+    "forbid_mock_demo_fake_data": true
+  },
+  "execution": {
+    "surgical_changes_only": true,
+    "principles": ["SOLID", "DRY", "Clean/Hexagonal", "BEM"],
+    "projects_root": "~/Code",
+    "benchmark_loop": {
+      "one_model_on_disk": true,
+      "steps": ["download", "note_in_list", "verify_sha256", "bench", "delete", "next"],
+      "forbid_batch_downloads": true
+    },
+    "memory_guardrails": {
+      "ram_free_min_gb": 2.5,
+      "vram_free_min_gb": 1.5,
+      "resident_plus_kv_max_gb_on_16gb": 13,
+      "on_approach_limit": "cut_load"
+    },
+    "routing_policy": "external_first_local_fallback",
+    "channels": { "realtime_audio": "webrtc/livekit", "inference": "http/sse over tailscale" }
+  },
+  "tdd_gate": {
+    "explicit_passing_test_required": true,
+    "beacons_sha256_for_correctness": true,
+    "env_pre_post_flight": true,
+    "invalid_if_interference": true
+  },
+  "recalc": {
+    "stop_on_evidence_or_founded_suspicion": true,
+    "capture_learning_to": ".atl/learnings.md",
+    "show_verified_result_to_ruben": true,
+    "commit": { "granular": true, "style": "conventional", "lang": "en", "push_if_remote": true },
+    "loop_back_to": "spec"
+  },
+  "ralph_loop": {
+    "fresh_context_per_iteration": true,
+    "memory_in_filesystem_and_git": true,
+    "roles": ["worker", "reviewer"],
+    "source_of_truth": ["tasks.json", "progress.txt"],
+    "stop_token": "<promise>COMPLETED</promise>"
+  }
+}

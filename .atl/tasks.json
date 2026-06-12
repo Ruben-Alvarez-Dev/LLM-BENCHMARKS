@@ -1,0 +1,14 @@
+{
+  "campaign": "ryzen-5600g-16gb + contabo-vps (2026-06-12)",
+  "tasks": [
+    {"id": "T1", "title": "Phase 0: engines on Ryzen (llama.cpp b9605)", "status": "done"},
+    {"id": "T2", "title": "Loop 1: Qwen3.5-2B Q4_K_M — smoke + depth ladder", "status": "in_progress",
+     "evidence": "results/bench1-*.md on node; docs/benchmarks/2026-06-12-RYZEN-Qwen3.5-2B.md"},
+    {"id": "T3", "title": "Loop 1b: fa+KVq8 comparison cell + beacons 32K/128K + ngram-mod + thread sweep", "status": "pending"},
+    {"id": "T4", "title": "Loops 2..22: categories A-F per docs/research/2026-06-12-RYZEN-5600G-INFERENCE-LANDSCAPE.md §6a-bis", "status": "pending"},
+    {"id": "T5", "title": "Migrate ~/frontier-bench to /Users/manu/Code/frontier-bench (PR05)", "status": "pending"},
+    {"id": "T6", "title": "VPS: tailscale + llama.cpp + STREAM bandwidth + common model + TEI embeddings bench", "status": "pending"},
+    {"id": "T7", "title": "Router: LiteLLM+UI on VPS, llama-server router-mode on Ryzen, survey, MCP, LiveKit voice layer", "status": "pending"},
+    {"id": "T8", "title": "Exploratory: Metal v3 on RX 580 WITH beacons; DiffusionGemma IQ3 hypothesis", "status": "pending"}
+  ]
+}
