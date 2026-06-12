@@ -109,3 +109,9 @@ save_result(conn, TestResult(config_id='...', status='ok', model_name='...', har
     timestamp=time.strftime('%Y-%m-%dT%H:%M:%S')))
 conn.close()
 "
+
+## Campaña ryzen-5600g-16gb (2026-06-12) — protocolo bucle 1-modelo
+
+| # | Modelo | Fichero | Tamaño | sha256 esperado | Estado |
+|---|---|---|---|---|---|
+| 1 | Qwen3.5-2B Q4_K_M | Qwen3.5-2B-Q4_K_M.gguf | 1.280.835.840 B | aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223 | VERIFICADO sha256 OK (2026-06-12 10:48) |

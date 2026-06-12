@@ -19,7 +19,7 @@ Se construyo un pipeline completo de benchmarks en Python:
 ### Modulos (6) en `engines/orchestrator/`:
 
 | Modulo | Funcion |
-|---|---|
+| --- | --- |
 | `model_registry.py` | Catalogo de 13+ modelos con metadatos tecnicos |
 | `ram_budget.py` | Calculo de RAM disponible y necesaria por config |
 | `test_matrix_generator.py` | Genera matriz cartesiana (context x kv x flash) filtrada por RAM |
@@ -78,7 +78,7 @@ y `/Users/local/Jart-OS-local-server/`. Accesibles por `admin` via permisos de g
 ### 3.5 Mistral-7B Tokenizador Corrupto
 
 **Problema:** El modelo MLX `Mistral-7B-Instruct-v0.3-4bit` tenia el tokenizador
-corrupto (vocab_file=None en tokenizer_config.json), imposibilitando su uso.
+corrupto (vocab*file=None en tokenizer*config.json), imposibilitando su uso.
 
 **Solucion:** Documentado como error, no se pudo procesar.
 
@@ -95,7 +95,7 @@ del filesystem (Library, Containers, node_modules).
 ### 4.1 llama.cpp (GGUF) en Mac Mini M1
 
 | Modelo | Contexto | tok/s | RAM | Notas |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Qwen2.5-7B-1M | 16K-256K q4_0 | 13.1 | ~10 GB | Flash no mejora generacion |
 | Gemma-3n-E2B | 16K-128K f16 | 71 | 6.3 GB | Buen worker 128K |
 | Qwen3.5-4B | 16K-256K q4_0 | 60 | 6.8 GB | MVP del stack |
@@ -107,15 +107,15 @@ del filesystem (Library, Containers, node_modules).
 ### 4.2 MLX en Mac Mini M1
 
 | Modelo | Bits | tok/s | RAM | Notas |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Llama-3.2-1B | 4bit | 78.6 | 0.86 GB | Mas rapido |
-| Qwen2.5-1.5B | 4bit | 61.9 | 1.07 GB | |
-| Gemma-3-1B | 8bit | 50.9 | 1.50 GB | |
-| Granite-3.3-2B | 4bit | 38.6 | 1.66 GB | |
-| Gemma-2-2B | 4bit | 36.8 | 1.67 GB | |
-| Llama-3.2-3B | 4bit | 31.7 | 2.11 GB | |
-| MiMo-7B | 4bit | 15.1 | 4.55 GB | |
-| Gemma-3-4B | 8bit | 14.4 | 5.03 GB | |
+| Qwen2.5-1.5B | 4bit | 61.9 | 1.07 GB |  |
+| Gemma-3-1B | 8bit | 50.9 | 1.50 GB |  |
+| Granite-3.3-2B | 4bit | 38.6 | 1.66 GB |  |
+| Gemma-2-2B | 4bit | 36.8 | 1.67 GB |  |
+| Llama-3.2-3B | 4bit | 31.7 | 2.11 GB |  |
+| MiMo-7B | 4bit | 15.1 | 4.55 GB |  |
+| Gemma-3-4B | 8bit | 14.4 | 5.03 GB |  |
 | Mistral-7B | 4bit | — | — | Tokenizador corrupto |
 
 ## 5. Modelos Pendientes en /Users/local/
@@ -125,21 +125,21 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 ### GGUF (llama.cpp)
 
 | Modelo | Ruta | Tamano | Prioridad |
-|---|---|---|---|
-| Gemma-4-26B-A4B Q4_K_M | .lmstudio/models/... | 16 GB | Alta |
-| Mistral-Small-3.2-24B Q4_K_M | .lmstudio/models/... | 13 GB | Alta |
+| --- | --- | --- | --- |
+| Gemma-4-26B-A4B Q4*K*M | .lmstudio/models/... | 16 GB | Alta |
+| Mistral-Small-3.2-24B Q4*K*M | .lmstudio/models/... | 13 GB | Alta |
 | Qwen3.6-27B Q2_K | .lmstudio/models/... | 10 GB | Alta |
-| Ministral-3-14B-Reasoning Q4_K_M | .lmstudio/models/... | 7.7 GB | Media |
-| Qwen3.5-9B Q4_K_M | .lmstudio/models/... | 5.2 GB | Media |
-| Qwen2.5-7B Q4_K_M | .lmstudio/models/... | 4.4 GB | Media |
-| olmOCR-2-7B-1025 Q4_K_M | .lmstudio/models/... | 4.4 GB | Baja (vision) |
+| Ministral-3-14B-Reasoning Q4*K*M | .lmstudio/models/... | 7.7 GB | Media |
+| Qwen3.5-9B Q4*K*M | .lmstudio/models/... | 5.2 GB | Media |
+| Qwen2.5-7B Q4*K*M | .lmstudio/models/... | 4.4 GB | Media |
+| olmOCR-2-7B-1025 Q4*K*M | .lmstudio/models/... | 4.4 GB | Baja (vision) |
 | Gemma-4-E2B GGUF | .lmstudio/models/... | 3.2 GB | Baja |
-| Nemotron-3-Nano-4B Q4_K_M | .lmstudio/models/... | 2.6 GB | Baja |
+| Nemotron-3-Nano-4B Q4*K*M | .lmstudio/models/... | 2.6 GB | Baja |
 
 ### MLX
 
 | Modelo | Ruta | Tamano | Prioridad |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GPT-OSS-20B MXFP4-Q8 | .lmstudio/models/... | 11 GB | Alta |
 | Gemma-3n-E4B MLX 6bit | .lmstudio/models/... | 7 GB | Media |
 | Voxtral-4B-TTS | .lmstudio/models/... | ~4 GB | Baja (TTS) |
@@ -150,23 +150,23 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 
 1. **Verificar maquina objetivo antes de ejecutar**: `hostname`, `sysctl hw.model`,
    `sysctl hw.memsize`.
-2. **Workflow correcto**: modelo en disco local -> copiar al MM (si es necesario) ->
+1. **Workflow correcto**: modelo en disco local -> copiar al MM (si es necesario) ->
    testear en MM -> documentar en BD con hardware= -> borrar de ambos.
-3. **Un modelo a la vez**: no paralelizar, no descargar lotes, no borrar por adelantado.
-4. **Hardware tracking en BD**: el schema de test_runs incluye campo `hardware` para
+1. **Un modelo a la vez**: no paralelizar, no descargar lotes, no borrar por adelantado.
+2. **Hardware tracking en BD**: el schema de test_runs incluye campo `hardware` para
    distinguir resultados de distintas maquinas.
-5. **RAM budget**: la estimacion sistematicamente infraestima ~1-2 GB por compute+host
+1. **RAM budget**: la estimacion sistematicamente infraestima ~1-2 GB por compute+host
    memory no contabilizada.
 
 ## 7. Proximo Trabajo
 
 1. Procesar modelos pendientes de `/Users/local/` (empezar por los mas grandes/
    prioritarios: Gemma-4-26B, Mistral-Small-24B, Qwen3.6-27B)
-2. Instalar Homebrew en el Mac Mini para gestion de paquetes
-3. Agregar engine adicional (vLLM, ollama) cuando esten disponibles
-4. Continuous batching multi-agente
-5. Speculative decoding
-6. PlanarQuant (requiere fork de llama.cpp)
+1. Instalar Homebrew en el Mac Mini para gestion de paquetes
+2. Agregar engine adicional (vLLM, ollama) cuando esten disponibles
+3. Continuous batching multi-agente
+4. Speculative decoding
+5. PlanarQuant (requiere fork de llama.cpp)
 
 ---
 
@@ -245,9 +245,9 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 
 - adapters/mcp/server.py: servidor MCP stdio SIN dependencias (JSON-RPC minimo:
   initialize, tools/list, tools/call, ping) — tercera cara del hexagono
-- 7 tools: bench_summary, bench_machines, bench_results (filtros), bench_rankings
-  (solo runs validos), bench_techniques (enciclopedia), bench_action_log,
-  bench_run_request (encola; el executor F3 lo consumira)
+- 7 tools: bench*summary, bench*machines, bench*results (filtros), bench*rankings
+  (solo runs validos), bench*techniques (enciclopedia), bench*action_log,
+  bench*run*request (encola; el executor F3 lo consumira)
 - Registrado en MCP Lens (mcp-servers.json) + perfil profiles/frontier-bench.js:
   KPIs, maquinas, ranking, coleccion de resultados con facetas, enciclopedia
 - e2e verificado: protocolo en sandbox + dashboard renderizado en Lens (5 paneles)
@@ -256,15 +256,15 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 ## Sesion 2026-06-06g — F3 en seco: concurrencia calibrada sin modelos
 
 - domain/loadmetrics.py: RequestResult + compute (agregado, per-stream p50, TTFT p50/p95,
-  error_rate, reprefill_pct) — funciones puras
+  error*rate, reprefill*pct) — funciones puras
 - adapters/loadgen: cliente OpenAI SSE stdlib (mide TTFT real, captura timings de
   llama-server) + perfiles A (Poisson), B (prefijo compartido multi-turno), C (asimetrico),
-  D (soak), E (tool-call JSON) + json_tool_validity
+  D (soak), E (tool-call JSON) + json*tool*validity
 - adapters/engines/llamaserver.py: ServingEnginePort (build_cmd segun tecnicas, /health, stop)
 - domain/battery.py: bateria completa de UN modelo — preflight ambiental → serve →
   perfil → postflight → Run valido/invalido → LIMPIEZA IMPOLUTA incondicional (try/finally)
 - IMPORTANTE (pregunta de Ruben): el FakeOpenAIServer de los tests calibra el INSTRUMENTO
-  (verificamos que reprefill_pct caza un #24055 simulado, que error_rate cuenta, que los
+  (verificamos que reprefill*pct caza un #24055 simulado, que error*rate cuenta, que los
   percentiles son correctos). La verificacion REAL de consistencia y contexto la hacen
   needles/degeneracion/JSON-vs-single-stream/timings reales — solo contra servers reales
   (pendiente de RAM libre). El fake garantiza que esos numeros signifiquen algo.
@@ -280,7 +280,7 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
   profundidad > ctx nativo debe medirse via llama-server (el planner enrutara)
 - HALLAZGO: llama-bench acepta listas/rangos nativos (-d 4096-1048576*2): escalera
   entera en una invocacion; --delay para asentamiento; warmup SE RESPETA
-- gguf_reader.py: metadatos leidos DEL FICHERO (arch, capas, kv_heads incl. per-layer
+- gguf*reader.py: metadatos leidos DEL FICHERO (arch, capas, kv*heads incl. per-layer
   en hibridos, ctx nativo, rope/YaRN). Verificado con QwenPaw-Flash-9B real: qwen35,
   32L, kv4, hd256, 262144 nativo, rope none → YaRN-extensible. Matiz: este GGUF no
   publica kv_heads por capa → la parte hibrida sale de tabla de archs conocidas (anotado)
@@ -308,7 +308,7 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 ## Sesion 2026-06-06j — F4 + executor + wizard + routing + catalogo (todo en seco)
 
 - domain/verdicts.py: VerdictEngine con reglas versionadas (verdict_rules.yaml):
-  apto_concurrencia, apto_contexto (con decode_retention/beacon_recall derivadas) y
+  apto*concurrencia, apto*contexto (con decode*retention/beacon*recall derivadas) y
   FRONTERA — la respuesta original: "este modelo sirve hasta N slots, este no".
   Metrica requerida SIN MEDIR = fallo explicito (nada se aprueba por omision)
 - domain/tuning.py: TuningAdvisor aplica tuning_rules.yaml al perfil del host;
@@ -318,8 +318,8 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
 - Planner: routing del censo — ctx>nativo sin rope_yarn => SKIPPED con motivo
   (llama-bench no extiende rope; esas celdas van a llama-server)
 - llamabench: multi-depth nativo (-d lista) + --delay entre tests
-- UI: wizard minimo de encolado + panel de cola (mismo canal que MCP bench_run_request)
-- Catalogo llm_catalogo.csv importado al registry (con flag on_disk)
+- UI: wizard minimo de encolado + panel de cola (mismo canal que MCP bench*run*request)
+- Catalogo llm*catalogo.csv importado al registry (con flag on*disk)
 - Tests: 83/83 OK
 
 ## Sesion 2026-06-07 — Literatura de tecnicas integrada (investigacion MCP-agent-research)
@@ -328,11 +328,73 @@ Los siguientes modelos estan en el Mac Mini (usuario `local`) y NO han sido proc
   (MTP Metal = perdida neta #23752; MTPLX 2.24x MLX-nativo; EAGLE-3 PR abierto;
   DFlash dependiente de engine; TurboQuant turbo3/4 4.6-5.2x en forks; YaRN s>8 y
   ppl-no-basta -> valida beacon recall; RTPurbo sparse 9.36x prefill en vigilancia)
-- techniques.yaml: enriquecidos kv_turboquant_tbq4 (Metal via turboquant_plus,
-  reported), spec_eagle3 (enciclopedia + prototipo mlx-lm #890) y rope_yarn
-  (enciclopedia); NUEVAS spec_dflash, spec_mtp_mlx (motor candidato MTPLX) y
-  sparse_attention_rtpurbo (research-stage, supports vacio)
+- techniques.yaml: enriquecidos kv*turboquant*tbq4 (Metal via turboquant_plus,
+  reported), spec*eagle3 (enciclopedia + prototipo mlx-lm #890) y rope*yarn
+  (enciclopedia); NUEVAS spec*dflash, spec*mtp_mlx (motor candidato MTPLX) y
+  sparse*attention*rtpurbo (research-stage, supports vacio)
 - Auditoria de MCP-agent-research durante la investigacion: search/extract excelente;
-  perplexica/gpt_research 403 con health check ciego; dedup bug en search_auto.
+  perplexica/gpt*research 403 con health check ciego; dedup bug en search*auto.
   Plan de reestructuracion en su repo (docs/2026-06-07-RESTRUCTURE-PLAN.md)
 - Tests: 83/83 OK tras los cambios de YAML (yaml_lite parsea el fichero real)
+
+## Sesion 2026-06-12 — Nueva maquina: ryzen-5600g-16gb (Mac de Manu, Hackintosh)
+
+- SSH por clave configurado (alias `manu-macpro`, manu@100.115.125.92 Tailscale);
+  `probe --ssh manu-macpro` registro la maquina en frontier*bench*v2.db:
+  AMD Ryzen 5 5600G, 16 GB, Darwin x86_64, AVX2 sin AVX-512, **cero engines** —
+  primer host no-Apple-Silicon del proyecto (perfil "Ryzen" del HostProfiler).
+- Inventario: sin brew/llama.cpp/python3 funcional; Ollama.app sin modelos; 18 GB libres.
+- Investigacion profunda (5 agentes paralelos) sobre modelos optimos para esta
+  maquina con restricciones de Ruben (Q4, ctx>=128K, >=20 t/s, tooling+vision+
+  razonamiento): docs/research/2026-06-12-RYZEN-5600G-INFERENCE-LANDSCAPE.md.
+  Conclusiones clave: (1) a 40 GB/s el denso 7-8B se queda en 8-10 t/s — solo
+  hibridos/MoE de <=2B activos cumplen; (2) el requisito 128K elimina GQA densos
+  clasicos por KV (~10 GB) — sobreviven GDN/mamba/SWA; (3) candidatos: Qwen3.5-2B
+  (unico que cumple todo), Granite-4.0-H-Tiny (mas rapido, sin vision),
+  Qwen3.5-4B (mejor tooling, 12-17 t/s); (4) iGPU Vega 7 inutil bajo macOS
+  (mismo bus, Metal roto en Hackintosh); (5) techo combinado = CPU + ik_llama.cpp
+  IQ_K + KV q8 + ngram/self-spec: ~30-50 t/s estimados.
+- CORRECCION GPU: la maquina NO usa la iGPU Vega 7 — lleva una Sapphire RX 580
+  8GB (Polaris 10; macOS la reporta erroneamente como "RX 570", device 0x67df
+  comun a ambas, spoof tipico de Hackintosh; Metal 2 activo, dando pantalla).
+  Documentacion previa del propio equipo en MANU-DOCKER/rotorquant-analysis/
+  (ESTRATEGIA-RX580-macOS.md, HACKINTOSH-RX580-INFORME_FINAL.md): Metal en
+  dGPU AMD = salida corrupta silenciosa (PROHIBIDO); via a explorar = Vulkan/
+  MoltenVK (sin probar, posible tope 4GB VRAM, sin DP4A); unico uso seguro hoy =
+  CoreML/Vision (OCR/embeddings imagen) via MPS. Sin NPU: ni Polaris ni 5600G
+  (XDNA empieza en 7040) ni ANE. Seccion 4 del research doc reescrita.
+- REGLAS DE EJECUCION (Ruben): avisar con propuesta antes de ejecutar nada;
+  UN modelo cargado a la vez; verificar RAM libre antes (ya implementado en
+  domain/environment.py pre/post-flight). Benchmarks pendientes de aprobacion.
+- REGLA PERMANENTE DE MEMORIA (Ruben, 2026-06-12): guardarrailes de memoria
+  SIEMPRE activos — jamas llegar al limite de RAM ni de VRAM; si una carga se
+  acerca al limite, CORTAR la inyeccion/carga; mantener margen de seguridad
+  permanente (RAM: >=2-3 GB libres para macOS; VRAM: >=1-1.5 GB). Aplica a
+  benchmarks, server y router. Encaja con required_gb + colchon de cli.measure.
+- PROTOCOLO DE BUCLE (Ruben, 2026-06-12, MUY IMPORTANTE): los benchmarks van
+  por bucles estrictos de UN modelo: (1) descargar UN solo modelo; (2) anotarlo
+  en la lista; (3) VERIFICAR descarga integra (tamano/sha) antes de cualquier
+  prueba; (4) benchmark paso a paso; (5) al terminar su linea, BORRAR el modelo
+  del disco; (6) solo con el espacio liberado se descarga el siguiente.
+  ABSOLUTAMENTE PROHIBIDO tener dos modelos a la vez en disco durante las
+  pruebas. Nada de descargas en lote.
+- Fase 0 ejecutada: llama.cpp b9605 oficial (macos-x64) instalado en
+  ~/frontier-bench/bin/llama-b9605 del Ryzen y verificado (llama-cli --version:
+  9605/85f99dca8, AppleClang Darwin x86_64). TODO: anadir al PATH para que
+  HostProfiler lo detecte en el proximo probe.
+- SEGUNDA PASADA SOTA (peticion de Ruben, pre-benchmark):
+  docs/research/2026-06-12-TECHNIQUES-SOTA-V2.md. Hallazgos que cambian el plan:
+  (1) --spec-type ngram-mod/draft-mtp YA en b9605 — especulacion draft-free
+  gratis, palanca para DENSOS (en MoE ~1x por union de expertos, documentar);
+  (2) MTP mainline para Qwen3.6 y Gemma-4 (PRs de mayo/junio);
+  (3) KV asimetrico q5_0(K)/q4_0(V) > q4_1 (estudio anbeeld); TurboQuant
+  RECHAZADO en mainline (PR #21089 cerrado 2-jun);
+  (4) Metal v3 funciona en Intel-Mac AMD y supera a MoltenVK (disc. #19187) —
+  la RX 580 vuelve al tablero, SIEMPRE validada con balizas;
+  (5) llama-server ROUTER MODE (dic-25): un modelo a la vez nativo,
+  --models-max 1, /models/load|unload — base perfecta para el router de Manu;
+  (6) higiene de benchmark: --cache-ram 0 -sps 0.0 --cache-reuse 0 en medicion
+  limpia; bug #21133 mmproj bloquea caches; slot save/restore para amortizar
+  prefill 128K; regla cuantitativa macOS: residente+KV+compute <= ~13 GB.
+- Pendiente: desplegar router LiteLLM+UI (repo LLM_ROUTER) integrando los
+  modelos locales del Ryzen via llama-server + LM Studio + MCP propio.
