@@ -1,83 +1,93 @@
 # LLM-BENCHMARKS — Benchmark Suite for Local Inference
 
-> Proyecto estructurado de investigacion y certificacion de modelos de lenguaje
-> para inferencia local en Apple Silicon (Mac Mini M1 16GB, MacBook Pro M1 Max 32GB).
->
-> Iniciado: 2026-05-24 | Ultima sesion: 2026-05-29
+> Research and certification of language models for local inference across a
+> heterogeneous fleet (Apple Silicon, AMD x86 Hackintosh, Linux VPS).
+> Started: 2026-05-24 · Last update: 2026-06-12
 
----
+## Governance
 
-## Estructura del Proyecto
+This repo is governed by `CLAUDE.md` + `.atl/` (golden rules, machine-readable
+rules, living memory in `learnings.md`, L0-L4 hook gates, Ralph Loop
+`tasks.json`/`progress.txt`). Read `CLAUDE.md` before touching anything.
+Iron rules: ONE model on disk at a time · memory guardrails always ·
+sha256 beacons for correctness claims · external/strategic load first,
+local as fallback · everything measured, nothing assumed.
+
+## Project structure
 
 ```
 LLM-BENCHMARKS/
-├── README.md                    # Este archivo — entry point
-├── SESSION.md                   # Bitacora completa de toda la investigacion
-├── docs/
-│   ├── research/                # Papers, disenos, especificaciones
-│   └── benchmarks/              # Reportes de benchmarks por modelo
-├── engines/
-│   ├── orchestrator/            # Pipeline de benchmarks (Python)
-│   │   ├── __init__.py
-│   │   ├── model_registry.py    # Catalogo de modelos con metadatos
-│   │   ├── ram_budget.py        # Calculo de presupuesto RAM
-│   │   ├── test_matrix_generator.py  # Matriz cartesiana de tests
-│   │   ├── test_executor.py     # Ejecutor llama-cli con timeouts
-│   │   ├── mlx_executor.py      # Ejecutor MLX (safetensors)
-│   │   ├── sqlite_writer.py     # Persistencia SQLite + Markdown
-│   │   └── main.py              # Pipeline CLI
-│   └── requirements.txt
-├── data/
-│   └── benchmark_results.db     # BD SQLite con todos los resultados
-├── models/
-│   └── STATUS.md                # Estado de todos los modelos
-└── scripts/
-    └── run-benchmark.sh         # Script de ejecucion
+├── CLAUDE.md                 # Per-iteration governance injection
+├── .atl/                     # Golden rules, learnings, hooks, Ralph Loop state
+├── SESSION.md                # Full research logbook (append-only)
+├── src/frontier_bench/       # FRONTIER BENCH v2 — hexagonal benchmark engine
+│   ├── domain/               # Pure domain: planner, kv_model, environment,
+│   │                         #  verdicts, battery, scheduler, ranking, executor
+│   └── adapters/             # llama-bench/cli/server, SSH/local runners,
+│                             #  SQLite WAL store, probes, corpus (sha256 beacons),
+│                             #  loadgen, web UI (:4400), MCP server
+├── batteries.yaml            # Declarative batteries + falsifiable hypotheses
+├── techniques.yaml           # Technique encyclopedia (purpose/not_for/evidence)
+├── tuning_rules.yaml         # Host-adaptive tuning rules with evidence
+├── verdict_rules.yaml        # APTO/FRONTERA verdict rules
+├── data/frontier_bench_v2.db # All results (SQLite WAL, hardware-tracked)
+├── docs/research/            # Dated research reports
+├── docs/benchmarks/          # Per-model result reports
+├── models/STATUS.md          # Model list + download/verify/delete protocol log
+└── engines/orchestrator/     # v1 pipeline (legacy, migrated into v2 DB)
 ```
 
-## Hardware Objetivo
+## Fleet (machines registered in DB)
 
-| Maquina | Chip | RAM | Hostname | Rol |
-|---|---|---|---|---|
-| Mac Mini | Apple M1 | 16 GB | mac-mini.local | Principal (benchmarks reales) |
-| MacBook Pro | Apple M1 Max | 32 GB | MacBook-Pro-de-ruben.local | Workstation (modelos grandes, desarrollo) |
-
-Ambas conectadas por red local (192.168.x.x) y Tailscale.
-
-## Motores de Inferencia
-
-| Engine | Formato | Instalacion | Estado |
+| machine_id | Hardware | OS | Role |
 |---|---|---|---|
-| llama.cpp (llama-cli) | GGUF | Homebrew / copia binaria | ✅ v8880 en ambos |
-| MLX (mlx-lm) | safetensors / MLX | pip install mlx-lm | ✅ v0.29.1 en MM |
+| m1-mini-16gb | Mac Mini M1, 16 GB | macOS | Original benchmark node |
+| m1-max-32gb | MacBook Pro M1 Max, 32 GB | macOS | Workstation / dev |
+| ryzen-5600g-16gb | Ryzen 5 5600G, 16 GB, Sapphire RX 580 8GB | macOS x86 (Hackintosh) | **Active campaign** (CPU AVX2; GPU only via CoreML/Vision or beacon-verified Metal v3 cells) |
+| contabo-vps | EPYC 6 vCPU, 11.7 GB | Linux | Services node: embeddings/rerank (TEI), router, batch |
 
-## Uso Rapido
+## Active campaign (2026-06-12): ryzen-5600g-16gb
+
+Goal: ≥20 t/s decode · Q4 · ≥128K context · max tooling/multimodal/reasoning.
+22 candidates in 6 categories (workers ≤2.6B · small-active MoE · 4B agents ·
+7-9B quality · vision · exploratory) — see
+`docs/research/2026-06-12-RYZEN-5600G-INFERENCE-LANDSCAPE.md` and the SOTA
+techniques pass in `docs/research/2026-06-12-TECHNIQUES-SOTA-V2.md`.
+
+First verified results (llama.cpp b9605, 6 threads, defaults — no fa/KVq8 yet):
+
+| Model | Cell | t/s |
+|---|---|---|
+| Qwen3.5-2B Q4_K_M | pp512 | 151.7 ± 0.9 |
+| Qwen3.5-2B Q4_K_M | tg128 | **25.1 ± 0.4** ✓ target met |
+| Qwen3.5-2B Q4_K_M | tg128 @32K depth | 8.4 ± 0.1 (lever cells queued) |
+
+Distributed architecture (router LiteLLM + web UI + LiveKit voice on VPS,
+llama-server router-mode on Ryzen): see `~/Code/LLM_ROUTER/ARQUITECTURA-DISTRIBUIDA-MANU.md`.
+
+## Historic results (v1, Mac Mini M1 16GB)
+
+129 tests, 10 GGUF + 9 MLX models processed and documented; migrated into the
+v2 DB with `protocol=v1`. Highlights: Qwen3.5-4B 60 t/s (MVP), Qwen3-1.7B
+156 t/s, Gemma-3n-E2B 71 t/s @128K. Full tables in `SESSION.md` §4.
+
+## Quick usage
 
 ```bash
-# Ver modelos disponibles en el registro
-cd /Users/admin/Code/LLM-BENCHMARKS
-PYTHONPATH=engines python3 -m orchestrator.main --list-models
+# Profile and register a machine (local or remote)
+PYTHONPATH=src python3 -m frontier_bench.cli probe --machine-id <id> [--ssh <host>]
 
-# Ver resultados existentes
-PYTHONPATH=engines python3 -m orchestrator.main --report
+# Plan a declarative battery (dry)
+PYTHONPATH=src python3 -m frontier_bench.cli battery multislot_certification --plan
 
-# Benchmark de un modelo GGUF
-PYTHONPATH=engines python3 -m orchestrator.main Qwen2.5-7B-1M --contexts 16384 32768 --kv q4_0 --flash both
+# Measure decode-at-depth with environmental validity
+PYTHONPATH=src python3 -m frontier_bench.cli measure --help
 
-# Benchmark de un modelo MLX
-mlx_lm.benchmark --model /ruta/al/modelo --prompt-tokens 128 --generation-tokens 256
+# Live dashboard
+PYTHONPATH=src python3 -m frontier_bench.cli ui   # http://localhost:4400
 ```
 
-## Estado Actual
+## Tests
 
-**129 tests totales ejecutados, 129 OK, 0 errores.**
-
-Completados (procesados, documentados, GGUFs borrados de ambos equipos):
-- 10 modelos GGUF (llama.cpp)
-- 9 modelos MLX
-
-Pendientes (en `/Users/local/` del Mac Mini, no procesados):
-- 9 modelos GGUF adicionales
-- 5 modelos MLX adicionales
-
-Ver `models/STATUS.md` para detalle completo.
+83/83 green (pure-domain unittest, no I/O). TDD gate: nothing is "done"
+without an explicit passing proof.

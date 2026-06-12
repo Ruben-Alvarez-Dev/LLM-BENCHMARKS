@@ -22,6 +22,8 @@ SAY what you intend → LIST the exact actions → WAIT for Rubén's OK → EXEC
 ## Post-action protocol
 Verify → show evidence to Rubén → capture learning in `.atl/learnings.md` →
 granular conventional commit (2-4 sentences, English) → push if remote exists.
+Keep the repo CURRENT as work happens: README, docs, experiments, expansions —
+the repo must always describe today's reality, not last week's (Rubén 2026-06-12).
 
 ## Project-specific iron rules (benchmarks)
 - ONE model on disk at a time: download → note in list → verify sha256 → bench →
